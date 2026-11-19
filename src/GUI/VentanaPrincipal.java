@@ -23,11 +23,19 @@ import javax.swing.tree.DefaultTreeModel;
 import Logica.NodoArchivo;
 import Logica.RutaInvalidaException;
 import javax.swing.JTextArea;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import java.awt.GridLayout;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
 
 public class VentanaPrincipal extends JFrame {
 
     private Administrador admin;
     private JTextArea txtEstadisticas;
+    private JTextField txtBuscar, txtExt, txtMinKB, txtMaxKB, txtDesde, txtHasta;
+    private DefaultTableModel modeloTabla;
 
     //GUI
     private JTextField txtRuta;
@@ -50,6 +58,7 @@ public class VentanaPrincipal extends JFrame {
         tabs = new JTabbedPane();
         tabs.addTab("Arbol", crearPanelArbol());
         tabs.addTab("Estadisticas", crearPanelEstadisticas());
+        tabs.addTab("Busqueda", crearPanelBusqueda());
         add(tabs, BorderLayout.CENTER);
     }
 
@@ -103,6 +112,78 @@ public class VentanaPrincipal extends JFrame {
         txtEstadisticas = new JTextArea();
         txtEstadisticas.setEditable(false);
         return new JScrollPane(txtEstadisticas);
+    }
+
+    private JPanel crearPanelBusqueda() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel filtros = new JPanel(new GridLayout(2, 1));
+        JPanel fila1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel fila2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        txtBuscar = new JTextField(15);
+        txtExt = new JTextField(5);
+        txtMinKB = new JTextField(6);
+        txtMaxKB = new JTextField(6);
+        txtDesde = new JTextField(8);
+        txtHasta = new JTextField(8);
+        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.addActionListener(e -> buscar());
+
+        fila1.add(new JLabel("Nombre:"));
+        fila1.add(txtBuscar);
+        fila1.add(new JLabel("Extension:"));
+        fila1.add(txtExt);
+        fila1.add(new JLabel("Tamano min (KB):"));
+        fila1.add(txtMinKB);
+        fila1.add(new JLabel("max (KB):"));
+        fila1.add(txtMaxKB);
+        fila2.add(new JLabel("Modificado desde (yyyy-MM-dd):"));
+        fila2.add(txtDesde);
+        fila2.add(new JLabel("hasta:"));
+        fila2.add(txtHasta);
+        fila2.add(btnBuscar);
+        filtros.add(fila1);
+        filtros.add(fila2);
+
+        String[] columnas = {"Nombre", "Ruta absoluta", "Tamano (bytes)", "Modificado"};
+        modeloTabla = new DefaultTableModel(columnas, 0) {
+            @Override
+            public Class<?> getColumnClass(int col) {
+                if (col == 2) {
+                    return Long.class;
+                }
+                if (col == 3) {
+                    return Date.class;
+                }
+                return String.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int fila, int col) {
+                return false;
+            }
+        };
+        JTable tabla = new JTable(modeloTabla);
+        tabla.setAutoCreateRowSorter(true);
+
+        panel.add(filtros, BorderLayout.NORTH);
+        panel.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void buscar() {
+        try {
+            ArrayList<File> lista = admin.buscar(txtBuscar.getText(), txtExt.getText(), txtMinKB.getText(),
+                    txtMaxKB.getText(), txtDesde.getText(), txtHasta.getText());
+            modeloTabla.setRowCount(0);
+            for (File f : lista) {
+                modeloTabla.addRow(new Object[]{f.getName(), f.getAbsolutePath(), f.length(), new Date(f.lastModified())});
+            }
+            if (lista.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No se encontraron archivos que coincidan con los criterios.");
+            }
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Datos invalidos", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     //Distinguir carpetas de archivos con el icono
