@@ -22,10 +22,12 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import Logica.NodoArchivo;
 import Logica.RutaInvalidaException;
+import javax.swing.JTextArea;
 
 public class VentanaPrincipal extends JFrame {
 
     private Administrador admin;
+    private JTextArea txtEstadisticas;
 
     //GUI
     private JTextField txtRuta;
@@ -47,6 +49,7 @@ public class VentanaPrincipal extends JFrame {
 
         tabs = new JTabbedPane();
         tabs.addTab("Arbol", crearPanelArbol());
+        tabs.addTab("Estadisticas", crearPanelEstadisticas());
         add(tabs, BorderLayout.CENTER);
     }
 
@@ -88,6 +91,7 @@ public class VentanaPrincipal extends JFrame {
             int prof = (Integer) spnProfundidad.getValue();
             DefaultMutableTreeNode raiz = admin.generarArbol(txtRuta.getText(), prof);
             arbol.setModel(new DefaultTreeModel(raiz));
+            txtEstadisticas.setText(admin.generarEstadisticas());
         } catch (RutaInvalidaException e) {
             JOptionPane.showMessageDialog(this, e.getMessage(), "Ruta invalida", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
@@ -95,7 +99,13 @@ public class VentanaPrincipal extends JFrame {
         }
     }
 
-    //Distingue carpetas de archivos con el icono
+    private JScrollPane crearPanelEstadisticas() {
+        txtEstadisticas = new JTextArea();
+        txtEstadisticas.setEditable(false);
+        return new JScrollPane(txtEstadisticas);
+    }
+
+    //Distinguir carpetas de archivos con el icono
     private class RendererArchivo extends DefaultTreeCellRenderer {
 
         @Override
